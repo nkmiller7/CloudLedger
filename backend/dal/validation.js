@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 const validate = {
     misc: {
-        object_id(id) {
+        object_id: (id) => {
             if (!ObjectId.isValid(id))
                 throw {
                     http_code: 400,
@@ -12,7 +12,7 @@ const validate = {
         },
     },
 
-    user: {
+    users: {
         username: (username) => {
             if (typeof username !== "string")
                 throw {
@@ -101,7 +101,7 @@ const validate = {
         },
     },
 
-    category: {
+    categories: {
         name: (name) => {
             if (typeof name !== "string")
                 throw {
