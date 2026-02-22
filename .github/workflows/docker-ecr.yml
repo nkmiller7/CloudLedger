@@ -39,3 +39,25 @@ jobs:
       - name: Push frontend image
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/cloudledger-frontend:latest
+
+            - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+      
+            cd ~/CloudLedger
+
+            # Login to ECR
+            aws ecr get-login-password --region us-east-1 \
+            | docker login --username AWS --password-stdin \
+              ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+
+            # Pull newest images
+            docker compose pull
+
+            # Restart containers with new images
+            docker compose up -d
