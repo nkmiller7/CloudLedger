@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mongo:7
+    container_name: cloudledger-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: app
+      MONGO_INITDB_ROOT_PASSWORD: app
+      MONGO_INITDB_DATABASE: cloudledger
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+
+  backend:
+    build: ./backend
+    container_name: cloudledger-backend
+    environment:
+      NODE_ENV: development
+      # Most common pattern:
+      MONGO_URI: mongodb://app:app@db:27017/cloudledger?authSource=admin
+      # If your code expects a different name (e.g. MONGODB_URI), change it.
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend/app
+    container_name: cloudledger-frontend
+    ports:
+      - "8080:8080"
+    environment:
+      # For browser-based React, localhost is correct (browser runs on your machine).
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      - backend
+
+volumes:
+  mongodata:
