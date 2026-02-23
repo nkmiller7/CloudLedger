@@ -14,7 +14,8 @@ import {
   Wallet, Plus, TrendingUp, TrendingDown, PiggyBank,
   Receipt, LogOut, DollarSign, Target,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 
 // Mock data
 const monthlyData = [
@@ -55,8 +56,15 @@ const monthlyBudget = 3500;
 
 const Dashboard = () => {
   const [filter, setFilter] = useState("all");
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const filtered = filter === "all" ? recentExpenses : recentExpenses.filter((e) => e.category === filter);
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,15 +78,32 @@ const Dashboard = () => {
             <span className="text-lg font-bold font-['Space_Grotesk']">CloudLedger</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">noah@cloudledger.io</span>
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/"><LogOut className="h-4 w-4" /></Link>
+            {user && (
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium">{user.first_name} {user.last_name}</p>
+                <p className="text-xs text-muted-foreground">@{user.username}</p>
+              </div>
+            )}
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        {/* Welcome section */}
+        {user && (
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold tracking-tight mb-2">
+              Welcome back, {user.first_name}! 👋
+            </h1>
+            <p className="text-muted-foreground">
+              Here's your financial overview and recent activity
+            </p>
+          </div>
+        )}
+
         {/* Summary cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>

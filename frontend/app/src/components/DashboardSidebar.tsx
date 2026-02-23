@@ -1,6 +1,8 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { BarChart3, CreditCard, Home, PiggyBank, Settings, Wallet, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Overview", icon: Home, href: "/dashboard" },
@@ -12,6 +14,13 @@ const navItems = [
 
 const DashboardSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-border bg-card">
@@ -44,14 +53,22 @@ const DashboardSidebar = () => {
         })}
       </nav>
 
-      <div className="border-t border-border p-4">
-        <Link
-          to="/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      <div className="border-t border-border p-4 space-y-4">
+        {user && (
+          <div className="rounded-lg p-3 bg-muted/50">
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Signed in as</p>
+            <p className="font-semibold text-sm mt-1">{user.first_name} {user.last_name}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">@{user.username}</p>
+          </div>
+        )}
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start gap-3"
         >
           <LogOut className="h-4 w-4" />
           Sign Out
-        </Link>
+        </Button>
       </div>
     </aside>
   );
