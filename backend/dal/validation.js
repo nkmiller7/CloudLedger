@@ -12,6 +12,63 @@ const validate = {
         },
     },
 
+    routes: {
+        users: {
+            register: (body) => {
+                if (typeof body !== "object" || body === null)
+                    throw {
+                        http_code: 400,
+                        reason: "request body must be a JSON object",
+                        trace: console.trace(),
+                    };
+                if (
+                    body.username === undefined ||
+                    body.password === undefined ||
+                    body.first_name === undefined ||
+                    body.last_name === undefined
+                )
+                    throw {
+                        http_code: 400,
+                        reason: "missing required fields",
+                        trace: console.trace(),
+                    };
+                if (Object.keys(body).length !== 4)
+                    throw {
+                        http_code: 400,
+                        reason: "unexpected fields in request body",
+                        trace: console.trace(),
+                    };
+                validate.users.username(body.username);
+                validate.users.password(body.password);
+                validate.users.first_name(body.first_name);
+                validate.users.last_name(body.last_name);
+            },
+
+            login: (body) => {
+                if (typeof body !== "object" || body === null)
+                    throw {
+                        http_code: 400,
+                        reason: "request body must be a JSON object",
+                        trace: console.trace(),
+                    };
+                if (body.username === undefined || body.password === undefined)
+                    throw {
+                        http_code: 400,
+                        reason: "missing required fields",
+                        trace: console.trace(),
+                    };
+                if (Object.keys(body).length !== 2)
+                    throw {
+                        http_code: 400,
+                        reason: "unexpected fields in request body",
+                        trace: console.trace(),
+                    };
+                validate.users.username(body.username);
+                validate.users.password(body.password);
+            },
+        },
+    },
+
     users: {
         username: (username) => {
             if (typeof username !== "string")
