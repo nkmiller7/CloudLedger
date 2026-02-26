@@ -10,16 +10,60 @@ import { useToast } from "@/hooks/use-toast";
 const SignUp = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: "Account created!", description: "Welcome to CloudLedger." });
-    navigate("/dashboard");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:3000/api/users/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          username,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({
+          title: "Sign up failed",
+          description: data.reason || "Failed to create account",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data));
+
+      toast({
+        title: "Account created!",
+        description: `Welcome, ${data.first_name}!`,
+      });
+
+      navigate("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to connect to server",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,16 +86,38 @@ const SignUp = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" placeholder="Noah" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+                  <Input 
+                    id="firstName" 
+                    placeholder="Noah" 
+                    value={firstName} 
+                    onChange={(e) => setFirstName(e.target.value)} 
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" placeholder="Miller" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                  <Input 
+                    id="lastName" 
+                    placeholder="Miller" 
+                    value={lastName} 
+                    onChange={(e) => setLastName(e.target.value)} 
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  type="text" 
+                  placeholder="john_doe" 
+                  value={username} 
+                  onChange={(e) => setUsername(e.target.value)} 
+                  required
+                  disabled={isLoading}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
@@ -63,11 +129,13 @@ const SignUp = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -75,7 +143,9 @@ const SignUp = () => {
               </div>
             </CardContent>
             <CardFooter className="flex-col gap-4">
-              <Button type="submit" className="w-full">Create Account</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating account..." : "Create Account"}
+              </Button>
               <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link to="/signin" className="text-primary hover:underline font-medium">Sign in</Link>
