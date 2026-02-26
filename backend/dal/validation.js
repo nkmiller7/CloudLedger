@@ -67,6 +67,63 @@ const validate = {
                 validate.users.password(body.password);
             },
         },
+
+        categories: {
+            create_category: (body) => {
+                if (typeof body !== "object" || body === null)
+                    throw {
+                        http_code: 400,
+                        reason: "request body must be a JSON object",
+                        trace: console.trace(),
+                    };
+                if (body.name === undefined)
+                    throw {
+                        http_code: 400,
+                        reason: "missing required fields",
+                        trace: console.trace(),
+                    };
+                if (Object.keys(body).length !== 1)
+                    throw {
+                        http_code: 400,
+                        reason: "unexpected fields in request body",
+                        trace: console.trace(),
+                    };
+                validate.categories.name(body.name);
+            },
+            create_expense: (body) => {
+                if (typeof body !== "object" || body === null)
+                    throw {
+                        http_code: 400,
+                        reason: "request body must be a JSON object",
+                        trace: console.trace(),
+                    };
+                if (
+                    body.category_id === undefined ||
+                    body.amount === undefined ||
+                    body.description === undefined ||
+                    body.transaction_date === undefined ||
+                    body.payment_method === undefined ||
+                    body.frequency === undefined
+                )
+                    throw {
+                        http_code: 400,
+                        reason: "missing required fields",
+                        trace: console.trace(),
+                    };
+                if (Object.keys(body).length !== 6)
+                    throw {
+                        http_code: 400,
+                        reason: "unexpected fields in request body",
+                        trace: console.trace(),
+                    };
+                validate.misc.object_id(body.category_id);
+                validate.categories.expense.amount(body.amount);
+                validate.categories.expense.description(body.description);
+                validate.categories.expense.transaction_date(body.transaction_date);
+                validate.categories.expense.payment_method(body.payment_method);
+                validate.categories.expense.frequency(body.frequency);
+            }
+        }
     },
 
     users: {
