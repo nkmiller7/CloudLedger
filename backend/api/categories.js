@@ -74,6 +74,27 @@ router.post("/", middleware.auth, async (req, res) => {
     }
 });
 
+router.delete("/:id", middleware.auth, async (req, res) => {
+    try {
+        await validate.misc.object_id(req.params.id);
+
+        await categories.delete_category(req.session.user_id, req.params.id);
+
+        return res.status(204).send();
+    } catch (error) {
+        if (
+            typeof error === "object" &&
+            error.http_code !== undefined &&
+            error.reason !== undefined &&
+            error.trace !== undefined
+        ) {
+            return res.status(error.http_code).json({ reason: error.reason });
+        } else {
+            return res.status(500).json({ reason: "internal server error" });
+        }
+    }
+});
+
 router.post("/:id/expense", middleware.auth, async (req, res) => {
     try {
         await validate.routes.categories.create_expense(req.body);
@@ -89,6 +110,32 @@ router.post("/:id/expense", middleware.auth, async (req, res) => {
         );
 
         return res.status(201).json(expense);
+    } catch (error) {
+        if (
+            typeof error === "object" &&
+            error.http_code !== undefined &&
+            error.reason !== undefined &&
+            error.trace !== undefined
+        ) {
+            return res.status(error.http_code).json({ reason: error.reason });
+        } else {
+            return res.status(500).json({ reason: "internal server error" });
+        }
+    }
+});
+
+router.delete("/:category_id/expense/:expense_id", middleware.auth, async (req, res) => {
+    try {
+        await validate.misc.object_id(req.params.category_id);
+        await validate.misc.object_id(req.params.expense_id);
+
+        await categories.delete_expense(
+            req.session.user_id,
+            req.params.category_id,
+            req.params.expense_id,
+        );
+
+        return res.status(204).send();
     } catch (error) {
         if (
             typeof error === "object" &&

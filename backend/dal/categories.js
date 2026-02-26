@@ -147,6 +147,55 @@ const categories = {
             frequency: frequency,
         };
     },
+
+    delete_category: async (creator_id, category_id) => {
+        category_id = category_id.trim();
+        creator_id = creator_id.trim();
+        validate.misc.object_id(category_id);
+        validate.misc.object_id(creator_id);
+
+        const category_collection = await categories_collection();
+        const delete_info = await category_collection.deleteOne({
+            _id: new ObjectId(category_id),
+            creator: new ObjectId(creator_id),
+        });
+        if (delete_info.acknowledged !== true)
+            throw {
+                http_code: 500,
+                reason: "failed to delete category",
+                trace: console.trace(),
+            };
+    },
+
+    delete_expense: async (creator_id, category_id, expense_id) => {
+        category_id = category_id.trim();
+        expense_id = expense_id.trim();
+        creator_id = creator_id.trim();
+        validate.misc.object_id(category_id);
+        validate.misc.object_id(expense_id);
+        validate.misc.object_id(creator_id);
+
+        const category_collection = await categories_collection();
+        const update_info = await category_collection.updateOne(
+            {
+                _id: new ObjectId(category_id),
+                creator: new ObjectId(creator_id),
+            },
+            {
+                $pull: {
+                    expenses: {
+                        _id: new ObjectId(expense_id),
+                    },
+                },
+            },
+        );
+        if (update_info.acknowledged !== true)
+            throw {
+                http_code: 500,
+                reason: "failed to delete expense",
+                trace: console.trace(),
+            };
+    },
 };
 
 export default categories;
