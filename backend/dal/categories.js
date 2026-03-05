@@ -1,7 +1,7 @@
 import config from "../config.js";
 import validate from "./validation.js";
 import { categories_collection } from "./mongo/collections.js";
-import { AuthMechanism, ObjectId } from "mongodb";
+import { ObjectId } from "mongodb";
 
 const categories = {
     get_category_by_name: async (creator_id, name, throws = true) => {
@@ -77,6 +77,7 @@ const categories = {
         const insert_info = await category_collection.insertOne({
             name: name,
             creator: new ObjectId(creator_id),
+            expenses: [],
         });
         if (insert_info.acknowledged !== true)
             throw {
@@ -113,7 +114,6 @@ const categories = {
         validate.categories.expense.frequency(frequency);
 
         const category_collection = await categories_collection();
-        const expenseId = new ObjectId();
         const update_info = await category_collection.updateOne(
             {
                 _id: new ObjectId(category_id),
@@ -122,7 +122,7 @@ const categories = {
             {
                 $push: {
                     expenses: {
-                        _id: expenseId,
+                        _id: new ObjectId(),
                         amount: amount,
                         description: description,
                         transaction_date: transaction_date,

@@ -15,3 +15,4 @@ const get_collection = (name) => {
 
 export const users_collection = get_collection("users");
 export const categories_collection = get_collection("categories");
+export const saving_goals_collection = get_collection("saving_goals");

@@ -126,6 +126,38 @@ const validate = {
                 validate.categories.expense.frequency(body.frequency);
             },
         },
+
+        saving_goals: {
+            create_saving_goal: (body) => {
+                if (typeof body !== "object" || body === null)
+                    throw {
+                        http_code: 400,
+                        reason: "request body must be a JSON object",
+                        trace: new Error().stack,
+                    };
+                if (
+                    body.name === undefined ||
+                    body.goal_amount === undefined ||
+                    body.current_amount === undefined ||
+                    body.deadline === undefined
+                )
+                    throw {
+                        http_code: 400,
+                        reason: "missing required fields",
+                        trace: new Error().stack,
+                    };
+                if (Object.keys(body).length !== 4)
+                    throw {
+                        http_code: 400,
+                        reason: "unexpected fields in request body",
+                        trace: new Error().stack,
+                    };
+                validate.saving_goals.name(body.name);
+                validate.saving_goals.goal_amount(body.goal_amount);
+                validate.saving_goals.current_amount(body.current_amount);
+                validate.saving_goals.deadline(body.deadline);
+            },
+        },
     },
 
     users: {
@@ -252,9 +284,8 @@ const validate = {
                         reason: "amount must be greater than 0",
                         trace: new Error().stack,
                     };
-                // Always check the string with two decimals
-                const amountStr = amount.toFixed(2);
-                if (!/^[0-9]+\.[0-9]{2}$/.test(amountStr))
+                const amount_str = amount.toFixed(2);
+                if (!/^[0-9]+\.[0-9]{2}$/.test(amount_str))
                     throw {
                         http_code: 400,
                         reason: "amount must be a decimal number with exactly two decimal places",
@@ -334,6 +365,86 @@ const validate = {
                         trace: new Error().stack,
                     };
             },
+        },
+    },
+
+    saving_goals: {
+        name: (name) => {
+            if (typeof name !== "string")
+                throw {
+                    http_code: 400,
+                    reason: "name must be a string",
+                    trace: new Error().stack,
+                };
+            if (!(name.length >= 5 && name.length <= 50))
+                throw {
+                    http_code: 400,
+                    reason: "name must be between 5 and 50 characters",
+                    trace: new Error().stack,
+                };
+            if (/[^a-zA-Z0-9 ]/.test(name))
+                throw {
+                    http_code: 400,
+                    reason: "name must only contain alphanumeric characters and spaces",
+                    trace: new Error().stack,
+                };
+        },
+        goal_amount: (goal_amount) => {
+            if (typeof goal_amount !== "number")
+                throw {
+                    http_code: 400,
+                    reason: "goal_amount must be a number",
+                    trace: new Error().stack,
+                };
+            if (goal_amount <= 0)
+                throw {
+                    http_code: 400,
+                    reason: "goal_amount must be greater than 0",
+                    trace: new Error().stack,
+                };
+            const goal_amount_str = goal_amount.toFixed(2);
+            if (!/^[0-9]+\.[0-9]{2}$/.test(goal_amount_str))
+                throw {
+                    http_code: 400,
+                    reason: "goal_amount must be a decimal number with exactly two decimal places",
+                    trace: new Error().stack,
+                };
+        },
+        current_amount: (current_amount) => {
+            if (typeof current_amount !== "number")
+                throw {
+                    http_code: 400,
+                    reason: "current_amount must be a number",
+                    trace: new Error().stack,
+                };
+            if (current_amount <= 0)
+                throw {
+                    http_code: 400,
+                    reason: "current_amount must be greater than 0",
+                    trace: new Error().stack,
+                };
+            const current_amount_str = current_amount.toFixed(2);
+            if (!/^[0-9]+\.[0-9]{2}$/.test(current_amount_str))
+                throw {
+                    http_code: 400,
+                    reason: "current_amount must be a decimal number with exactly two decimal places",
+                    trace: new Error().stack,
+                };
+        },
+        deadline: (deadline) => {
+            if (typeof deadline !== "string")
+                throw {
+                    http_code: 400,
+                    reason: "deadline must be a string",
+                    trace: new Error().stack,
+                };
+            const date = new Date(deadline);
+            if (isNaN(date.getTime()) || date.toISOString() !== deadline)
+                throw {
+                    http_code: 400,
+                    reason: "deadline must be a valid date string in ISO 8601 format",
+                    trace: new Error().stack,
+                };
         },
     },
 };

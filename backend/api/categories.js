@@ -28,7 +28,7 @@ router.get("/", middleware.auth, async (req, res) => {
 
 router.get("/:id", middleware.auth, async (req, res) => {
     try {
-        await validate.misc.object_id(req.params.id);
+        validate.misc.object_id(req.params.id);
 
         const category = await categories.get_category_by_id(
             req.session.user_id,
@@ -52,7 +52,7 @@ router.get("/:id", middleware.auth, async (req, res) => {
 
 router.post("/", middleware.auth, async (req, res) => {
     try {
-        await validate.routes.categories.create_category(req.body);
+        validate.routes.categories.create_category(req.body);
 
         const category = await categories.create_category(
             req.session.user_id,
@@ -80,11 +80,11 @@ router.post("/", middleware.auth, async (req, res) => {
 
 router.delete("/:id", middleware.auth, async (req, res) => {
     try {
-        await validate.misc.object_id(req.params.id);
+        validate.misc.object_id(req.params.id);
 
         await categories.delete_category(req.session.user_id, req.params.id);
 
-        return res.status(204).send();
+        return res.status(204).json({ reason: "success" });
     } catch (error) {
         if (
             typeof error === "object" &&
@@ -101,7 +101,7 @@ router.delete("/:id", middleware.auth, async (req, res) => {
 
 router.post("/:id/expense", middleware.auth, async (req, res) => {
     try {
-        await validate.routes.categories.create_expense(req.body);
+        validate.routes.categories.create_expense(req.body);
 
         const expense = await categories.create_expense(
             req.session.user_id,
@@ -133,8 +133,8 @@ router.delete(
     middleware.auth,
     async (req, res) => {
         try {
-            await validate.misc.object_id(req.params.category_id);
-            await validate.misc.object_id(req.params.expense_id);
+            validate.misc.object_id(req.params.category_id);
+            validate.misc.object_id(req.params.expense_id);
 
             await categories.delete_expense(
                 req.session.user_id,
@@ -142,7 +142,7 @@ router.delete(
                 req.params.expense_id,
             );
 
-            return res.status(204).send();
+            return res.status(204).json({ reason: "success" });
         } catch (error) {
             if (
                 typeof error === "object" &&
