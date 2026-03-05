@@ -16,7 +16,7 @@ const users = {
             throw {
                 http_code: 404,
                 reason: "user not found",
-                trace: console.trace(),
+                trace: new Error().stack,
             };
 
         return user;
@@ -34,7 +34,7 @@ const users = {
             throw {
                 http_code: 400,
                 reason: "username already exists",
-                trace: console.trace(),
+                trace: new Error().stack,
             };
 
         const user_collection = await users_collection();
@@ -48,7 +48,7 @@ const users = {
             throw {
                 http_code: 500,
                 reason: "failed to create user",
-                trace: console.trace(),
+                trace: new Error().stack,
             };
 
         return {
@@ -63,13 +63,13 @@ const users = {
         username = username.trim();
         validate.users.username(username);
         validate.users.password(password);
-        
+
         const user = await users.get_user_by_username(username, false);
         if (user === null) {
             throw {
                 http_code: 401,
                 reason: "invalid username or password",
-                trace: console.trace(),
+                trace: new Error().stack,
             };
         }
         const password_match = await bcrypt.compare(password, user.password);
@@ -77,10 +77,10 @@ const users = {
             throw {
                 http_code: 401,
                 reason: "invalid username or password",
-                trace: console.trace(),
+                trace: new Error().stack,
             };
         }
-        
+
         return {
             _id: user._id.toString(),
             username: user.username,
