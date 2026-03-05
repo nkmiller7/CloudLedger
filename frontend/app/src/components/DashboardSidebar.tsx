@@ -8,7 +8,6 @@ const navItems = [
   { label: "Overview", icon: Home, href: "/dashboard" },
   { label: "Expenses", icon: CreditCard, href: "/dashboard/expenses" },
   { label: "Savings", icon: PiggyBank, href: "/dashboard/savings" },
-  { label: "Analytics", icon: BarChart3, href: "/dashboard/analytics" },
   { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
