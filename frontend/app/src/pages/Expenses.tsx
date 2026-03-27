@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,30 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockExpenses, type Expense } from "../lib/mock-data";
 import { useToast } from "@/hooks/use-toast";
 
+type Expense = {
+  _id?: string;
+  id?: string;
+  amount: number;
+  description: string;
+  category: string;
+  transaction_date?: string;
+  transactionDate?: string;
+  payment_method?: string;
+  paymentMethod?: string;
+  frequency?: string;
+  recurring?: boolean;
+  categoryId?: string;
+};
+
 const Expenses = () => {
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string }[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
+  const [openCategoryDialog, setOpenCategoryDialog] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
   const { toast } = useToast();
 
   // New expense form state
@@ -24,43 +41,102 @@ const Expenses = () => {
     paymentMethod: "debit" as "credit" | "debit" | "cash",
   });
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const catData = await resCat.json();
+        setCategories(catData || []);
+        // Flatten expenses from all categories
+        const allExpenses = catData.flatMap((cat) => (cat.expenses || []).map((exp) => ({ ...exp, category: cat.name, categoryId: cat._id })));
+        setExpenses(allExpenses);
+      } catch (err) {
+        setCategories([]);
+        setExpenses([]);
+      }
+    };
+    fetchData();
+  }, []);
+
   const filtered = expenses.filter(
     (e) =>
       e.description.toLowerCase().includes(search.toLowerCase()) ||
       e.category.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newExpense.description || !newExpense.amount || !newExpense.category) return;
-
-    const categoryIcons: Record<string, string> = {
-      "Housing": "🏠", "Food & Dining": "🛒", "Entertainment": "🎵",
-      "Transportation": "🚗", "Utilities": "⚡", "Shopping": "🛍️", "Other": "📦",
-    };
-
-    const expense: Expense = {
-      id: Date.now().toString(),
-      description: newExpense.description,
-      amount: parseFloat(newExpense.amount),
-      category: newExpense.category,
-      categoryIcon: categoryIcons[newExpense.category] || "📦",
-      transactionDate: new Date().toISOString().split("T")[0],
-      paymentMethod: newExpense.paymentMethod,
-      recurring: { isRecurring: false },
-    };
-
-    setExpenses([expense, ...expenses]);
-    setNewExpense({ description: "", amount: "", category: "", paymentMethod: "debit" });
-    setOpen(false);
-    toast({ title: "Expense added", description: `$${expense.amount.toFixed(2)} for ${expense.description}` });
+    try {
+      // Find category ID
+      const cat = categories.find((c) => c.name === newExpense.category);
+      if (!cat) return;
+      // Map UI payment method to backend expected value
+      let backendPaymentMethod = "";
+      if (newExpense.paymentMethod === "debit") backendPaymentMethod = "debit_card";
+      else if (newExpense.paymentMethod === "credit") backendPaymentMethod = "credit_card";
+      else if (newExpense.paymentMethod === "cash") backendPaymentMethod = "cash";
+      else backendPaymentMethod = "other";
+      const res = await fetch(`http://localhost:3000/api/categories/${cat._id}/expense`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          category_id: cat._id,
+          amount: parseFloat(newExpense.amount),
+          description: newExpense.description,
+          transaction_date: new Date().toISOString(),
+          payment_method: backendPaymentMethod,
+          frequency: "one_time",
+        }),
+      });
+      if (res.ok) {
+        setOpen(false);
+        setNewExpense({ description: "", amount: "", category: "", paymentMethod: "debit" });
+        toast({ title: "Expense added", description: `${newExpense.amount} for ${newExpense.description}` });
+        // Refresh expenses
+        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const catData = await resCat.json();
+        const allExpenses = catData.flatMap((cat) => (cat.expenses || []).map((exp) => ({ ...exp, category: cat.name, categoryId: cat._id })));
+        setExpenses(allExpenses);
+      }
+    } catch {}
   };
 
-  const handleDelete = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
-    toast({ title: "Expense deleted" });
+  const handleDelete = async (expense: Expense) => {
+    try {
+      if (!expense.categoryId || !expense._id) return;
+      const res = await fetch(`http://localhost:3000/api/categories/${expense.categoryId}/expense/${expense._id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        toast({ title: "Expense deleted" });
+        setExpenses(expenses.filter((e) => e._id !== expense._id));
+      }
+    } catch {}
   };
 
-  const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    try {
+      const res = await fetch("http://localhost:3000/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: newCategoryName }),
+      });
+      if (res.ok) {
+        setNewCategoryName("");
+        setOpenCategoryDialog(false);
+        // Refresh categories
+        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const catData = await resCat.json();
+        setCategories(catData || []);
+      }
+    } catch {}
+  };
+
+  const total = filtered.reduce((sum, e) => sum + (e.amount || 0), 0);
 
   return (
     <div className="p-8 space-y-6">
@@ -101,12 +177,16 @@ const Expenses = () => {
               </div>
               <div className="space-y-2">
                 <Label>Category</Label>
-                <Select value={newExpense.category} onValueChange={(v) => setNewExpense({ ...newExpense, category: v })}>
+                <Select value={newExpense.category} onValueChange={(v) => {
+                  if (v === "__add_new__") setOpenCategoryDialog(true);
+                  else setNewExpense({ ...newExpense, category: v });
+                }}>
                   <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                   <SelectContent>
-                    {["Housing", "Food & Dining", "Entertainment", "Transportation", "Utilities", "Shopping", "Other"].map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c._id} value={c.name}>{c.name}</SelectItem>
                     ))}
+                    <SelectItem value="__add_new__" className="text-primary">+ Add new category</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -122,6 +202,20 @@ const Expenses = () => {
                 </Select>
               </div>
               <Button onClick={handleAdd} className="w-full" variant="hero">Add Expense</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Dialog for new category */}
+        <Dialog open={openCategoryDialog} onOpenChange={setOpenCategoryDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Category</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <Label>Category Name</Label>
+              <Input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="Enter category name" />
+              <Button onClick={handleAddCategory} className="w-full" variant="hero">Add Category</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -155,23 +249,23 @@ const Expenses = () => {
         </div>
         {filtered.map((expense, i) => (
           <motion.div
-            key={expense.id}
+            key={expense._id || expense.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: i * 0.03 }}
             className="grid grid-cols-[1fr_120px_140px_100px_50px] gap-4 items-center border-b border-border/50 px-6 py-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="text-lg">{expense.categoryIcon}</span>
+              {/* <span className="text-lg">{expense.categoryIcon}</span> */}
               <div>
                 <p className="text-sm font-medium text-foreground">{expense.description}</p>
-                <p className="text-xs text-muted-foreground">{expense.transactionDate}</p>
+                <p className="text-xs text-muted-foreground">{expense.transaction_date || expense.transactionDate}</p>
               </div>
             </div>
             <span className="text-sm font-semibold text-foreground">-${expense.amount.toFixed(2)}</span>
             <Badge variant="secondary" className="w-fit text-xs">{expense.category}</Badge>
-            <span className="text-xs capitalize text-muted-foreground">{expense.paymentMethod}</span>
-            <button onClick={() => handleDelete(expense.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+            <span className="text-xs capitalize text-muted-foreground">{expense.payment_method || expense.paymentMethod}</span>
+            <button onClick={() => handleDelete(expense)} className="text-muted-foreground hover:text-destructive transition-colors">
               <Trash2 className="h-4 w-4" />
             </button>
           </motion.div>

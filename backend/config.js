@@ -7,6 +7,9 @@ const config = {
         uri: "mongodb://localhost:27017/",
         database_name: "CloudLedger",
     },
+    bcrypt: {
+        salt_rounds: 10,
+    }
 };
 
 export default config;
