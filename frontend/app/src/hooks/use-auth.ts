@@ -5,6 +5,7 @@ export interface User {
   username: string;
   first_name: string;
   last_name: string;
+  monthly_budget?: number;
 }
 
 export const useAuth = () => {

@@ -20,8 +20,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 
-const monthlyBudget = 3500;
-
 const Dashboard = () => {
     // State for new category dialog
     const [openCategoryDialog, setOpenCategoryDialog] = useState(false);
@@ -30,9 +28,12 @@ const Dashboard = () => {
   const [filter, setFilter] = useState("all");
   const [categories, setCategories] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [savingsGoals, setSavingsGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+
+  const monthlyBudget = user?.monthly_budget ?? 3500;
   const [showExpenseInput, setShowExpenseInput] = useState(false);
   const [expenseInput, setExpenseInput] = useState({
     description: "",
@@ -51,9 +52,21 @@ useEffect(() => {
       // Flatten expenses from all categories
       const allExpenses = catData.flatMap((cat) => (cat.expenses || []).map((exp) => ({ ...exp, category: cat.name })));
       setExpenses(allExpenses);
+
+      // Fetch savings goals
+      try {
+        const resSavings = await fetch("http://localhost:3000/api/saving_goals", { credentials: "include" });
+        if (resSavings.ok) {
+          const savingsData = await resSavings.json();
+          setSavingsGoals(savingsData || []);
+        }
+      } catch {
+        setSavingsGoals([]);
+      }
     } catch (err) {
       setCategories([]);
       setExpenses([]);
+      setSavingsGoals([]);
     }
     setLoading(false);
   };
@@ -394,6 +407,74 @@ return (
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Savings Goals Card */}
+        <div className="lg:col-span-1">
+          <Card className="h-full">
+            <CardHeader className="flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-base">Savings Goals</CardTitle>
+                <CardDescription>Track your progress</CardDescription>
+              </div>
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <PiggyBank className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {savingsGoals.length > 0 ? (() => {
+                const totalSaved = savingsGoals.reduce((sum, g) => sum + (g.current_amount || 0), 0);
+                const totalTarget = savingsGoals.reduce((sum, g) => sum + (g.goal_amount || 0), 0);
+                const overallPct = totalTarget > 0 ? (totalSaved / totalTarget) * 100 : 0;
+                const sorted = [...savingsGoals].sort((a, b) => {
+                  const pctA = a.goal_amount > 0 ? a.current_amount / a.goal_amount : 0;
+                  const pctB = b.goal_amount > 0 ? b.current_amount / b.goal_amount : 0;
+                  return pctB - pctA;
+                }).slice(0, 3);
+                return (
+                  <>
+                    <div className="text-sm">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-muted-foreground">Total Saved</span>
+                        <span className="font-semibold">${totalSaved.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${totalTarget.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                      </div>
+                      <Progress value={Math.min(overallPct, 100)} className="h-2" />
+                      <p className="text-xs text-muted-foreground text-right mt-1">{overallPct.toFixed(1)}%</p>
+                    </div>
+                    <div className="space-y-3 pt-1">
+                      {sorted.map((goal) => {
+                        const pct = goal.goal_amount > 0 ? (goal.current_amount / goal.goal_amount) * 100 : 0;
+                        return (
+                          <div key={goal._id} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="font-medium truncate">{goal.name}</span>
+                              <span className="text-xs text-muted-foreground shrink-0 ml-2">{pct.toFixed(0)}%</span>
+                            </div>
+                            <Progress value={Math.min(pct, 100)} className="h-1.5" />
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>${goal.current_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                              <span>${goal.goal_amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full" onClick={() => navigate("/dashboard/savings")}>
+                      View All Goals
+                    </Button>
+                  </>
+                );
+              })() : (
+                <div className="text-center py-6">
+                  <PiggyBank className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground mb-3">No savings goals yet</p>
+                  <Button variant="outline" size="sm" onClick={() => navigate("/dashboard/savings")}>
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Create Goal
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
