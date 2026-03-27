@@ -14,7 +14,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Scan backend
         working-directory: backend
@@ -24,7 +24,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend/app
-        run: npm ci
+        run: npm install
 
       - name: Scan frontend
         working-directory: frontend/app
