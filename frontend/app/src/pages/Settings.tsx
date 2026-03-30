@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, User } from "@/hooks/use-auth";
+import API_URL from "../config";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -24,7 +25,7 @@ const Settings = () => {
     }
     setSaving(true);
     try {
-      const res = await fetch("http://localhost:3000/api/users/settings", {
+      const res = await fetch(`${API_URL}/api/users/settings`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

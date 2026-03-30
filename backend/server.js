@@ -8,7 +8,7 @@ const backend = express();
 
 backend.use(
     cors({
-        origin: "http://localhost:8080",
+        origin: process.env.CLIENT_URL || "http://localhost:8080",
         credentials: true,
     }),
 );

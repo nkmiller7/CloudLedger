@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Link, useNavigate } from "react-router-dom";
 import { Wallet, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import API_URL from "../config";
 
 const SignIn = () => {
   const [username, setUsername] = useState("");
@@ -20,7 +21,7 @@ const SignIn = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/api/users/login", {
+      const response = await fetch(`${API_URL}/api/users/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
