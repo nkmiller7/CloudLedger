@@ -6,7 +6,7 @@ services:
     environment:
       NODE_ENV: development
       # Most common pattern:
-      MONGO_URI: mongodb://app:app@db:27017/cloudledger?authSource=admin
+      MONGO_URI: mongodb://host.docker.internal:27017/cloudledger
       # If your code expects a different name (e.g. MONGODB_URI), change it.
     ports:
       - "3000:3000"

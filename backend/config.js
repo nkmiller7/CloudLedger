@@ -4,8 +4,8 @@ const config = {
         session_secret: "36846238746782364823",
     },
     mongo: {
-        uri: "mongodb://localhost:27017/",
-        database_name: "CloudLedger",
+        uri: process.env.MONGO_URI || "mongodb://localhost:27017/",
+        database_name: "cloudledger",
     },
     bcrypt: {
         salt_rounds: 10,
