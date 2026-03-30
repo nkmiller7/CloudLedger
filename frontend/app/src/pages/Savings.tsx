@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import API_URL from "../config";
 
 type SavingGoal = {
   _id: string;
@@ -34,7 +35,7 @@ const Savings = () => {
 
   const fetchGoals = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/saving_goals", { credentials: "include" });
+      const res = await fetch(`${API_URL}/api/saving_goals`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setGoals(data || []);
@@ -52,7 +53,7 @@ const Savings = () => {
     if (!newGoal.name || !newGoal.goal_amount || !newGoal.current_amount || !newGoal.deadline) return;
     try {
       const deadlineDate = new Date(newGoal.deadline);
-      const res = await fetch("http://localhost:3000/api/saving_goals", {
+      const res = await fetch(`${API_URL}/api/saving_goals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -80,7 +81,7 @@ const Savings = () => {
   const handleContribute = async () => {
     if (!selectedGoal || !contributeAmount) return;
     try {
-      const res = await fetch(`http://localhost:3000/api/saving_goals/${selectedGoal._id}`, {
+      const res = await fetch(`${API_URL}/api/saving_goals/${selectedGoal._id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -105,7 +106,7 @@ const Savings = () => {
 
   const handleDelete = async (goal: SavingGoal) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/saving_goals/${goal._id}`, {
+      const res = await fetch(`${API_URL}/api/saving_goals/${goal._id}`, {
         method: "DELETE",
         credentials: "include",
       });

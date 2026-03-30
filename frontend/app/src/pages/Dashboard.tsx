@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import API_URL from "../config";
 
 
 const Dashboard = () => {
@@ -46,7 +47,7 @@ useEffect(() => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+      const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
       const catData = await resCat.json();
       setCategories(catData || []);
       // Flatten expenses from all categories
@@ -55,7 +56,7 @@ useEffect(() => {
 
       // Fetch savings goals
       try {
-        const resSavings = await fetch("http://localhost:3000/api/saving_goals", { credentials: "include" });
+        const resSavings = await fetch(`${API_URL}/api/saving_goals`, { credentials: "include" });
         if (resSavings.ok) {
           const savingsData = await resSavings.json();
           setSavingsGoals(savingsData || []);
@@ -92,7 +93,7 @@ const handleAddExpenseFromDashboard = async () => {
   try {
     const cat = categories.find((c) => c.name === expenseInput.category);
     if (!cat) return;
-    const res = await fetch(`http://localhost:3000/api/categories/${cat._id}/expense`, {
+    const res = await fetch(`${API_URL}/api/categories/${cat._id}/expense`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -118,7 +119,7 @@ const handleAddExpenseFromDashboard = async () => {
     e.preventDefault();
     if (!newCategoryName.trim()) return;
     try {
-      const res = await fetch("http://localhost:3000/api/categories", {
+      const res = await fetch(`${API_URL}/api/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -126,7 +127,7 @@ const handleAddExpenseFromDashboard = async () => {
       });
       if (res.ok) {
         // Refresh categories and select the new one after fetch
-        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
         const catData = await resCat.json();
         setCategories(catData || []);
         setExpenseInput((prev) => ({ ...prev, category: newCategoryName }));

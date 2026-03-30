@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import API_URL from "../config";
 
 type Expense = {
   _id?: string;
@@ -44,7 +45,7 @@ const Expenses = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
         const catData = await resCat.json();
         setCategories(catData || []);
         // Flatten expenses from all categories
@@ -76,7 +77,7 @@ const Expenses = () => {
       else if (newExpense.paymentMethod === "credit") backendPaymentMethod = "credit_card";
       else if (newExpense.paymentMethod === "cash") backendPaymentMethod = "cash";
       else backendPaymentMethod = "other";
-      const res = await fetch(`http://localhost:3000/api/categories/${cat._id}/expense`, {
+      const res = await fetch(`${API_URL}/api/categories/${cat._id}/expense`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -94,7 +95,7 @@ const Expenses = () => {
         setNewExpense({ description: "", amount: "", category: "", paymentMethod: "debit" });
         toast({ title: "Expense added", description: `${newExpense.amount} for ${newExpense.description}` });
         // Refresh expenses
-        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
         const catData = await resCat.json();
         const allExpenses = catData.flatMap((cat) => (cat.expenses || []).map((exp) => ({ ...exp, category: cat.name, categoryId: cat._id })));
         setExpenses(allExpenses);
@@ -105,7 +106,7 @@ const Expenses = () => {
   const handleDelete = async (expense: Expense) => {
     try {
       if (!expense.categoryId || !expense._id) return;
-      const res = await fetch(`http://localhost:3000/api/categories/${expense.categoryId}/expense/${expense._id}`, {
+      const res = await fetch(`${API_URL}/api/categories/${expense.categoryId}/expense/${expense._id}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -119,7 +120,7 @@ const Expenses = () => {
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
     try {
-      const res = await fetch("http://localhost:3000/api/categories", {
+      const res = await fetch(`${API_URL}/api/categories`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -129,7 +130,7 @@ const Expenses = () => {
         setNewCategoryName("");
         setOpenCategoryDialog(false);
         // Refresh categories
-        const resCat = await fetch("http://localhost:3000/api/categories", { credentials: "include" });
+        const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
         const catData = await resCat.json();
         setCategories(catData || []);
       }

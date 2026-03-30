@@ -26,3 +26,5 @@ frontend/app/.sw?
 # Backend
 backend/node_modules/
 backend/package-lock.json
+*.env
+*.pem
