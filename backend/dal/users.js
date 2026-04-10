@@ -64,8 +64,6 @@ const users = {
 
   login_user: async (username, password) => {
     username = username.trim();
-    validate.users.username(username);
-    validate.users.password(password);
 
     const user = await users.get_user_by_username(username, false);
     if (user === null) {
