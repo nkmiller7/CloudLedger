@@ -392,11 +392,11 @@ const validate = {
             reason: "payment_method must be a string",
             trace: new Error().stack,
           };
-        if (!["cash", "credit_card", "debit_card"].includes(payment_method))
+        if (!["cash", "credit", "debit"].includes(payment_method))
           throw {
             http_code: 400,
             reason:
-              "payment_method must be one of 'cash', 'credit_card', or 'debit_card'",
+              "payment_method must be one of 'cash', 'credit', or 'debit'",
             trace: new Error().stack,
           };
       },
