@@ -63,8 +63,6 @@ const validate = {
             reason: "unexpected fields in request body",
             trace: new Error().stack,
           };
-        validate.users.username(body.username);
-        validate.users.password(body.password);
       },
       update_settings: (body) => {
         if (typeof body !== "object" || body === null)
