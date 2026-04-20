@@ -3,6 +3,7 @@ import cors from "cors";
 import session from "express-session";
 import config from "./config.js";
 import initialize_routes from "./api/index.js";
+import { metricsMiddleware } from "./api/metrics.js";
 
 const backend = express();
 
@@ -21,6 +22,8 @@ backend.use(
         saveUninitialized: true,
     }),
 );
+
+backend.use(metricsMiddleware);
 initialize_routes(backend);
 
 backend.listen(config.express.port, () => {});
