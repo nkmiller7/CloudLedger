@@ -319,10 +319,10 @@ const validate = {
           reason: "name must be a string",
           trace: new Error().stack,
         };
-      if (!(name.length >= 5 && name.length <= 50))
+      if (!(name.length >= 3 && name.length <= 50))
         throw {
           http_code: 400,
-          reason: "name must be between 5 and 50 characters",
+          reason: "name must be between 3 and 50 characters",
           trace: new Error().stack,
         };
       if (/[^a-zA-Z0-9 ]/.test(name))
