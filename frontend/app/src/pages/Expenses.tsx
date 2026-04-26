@@ -88,12 +88,10 @@ const Expenses = () => {
     );
 
     const handleAdd = async () => {
-        if (
-            !newExpense.description ||
-            !newExpense.amount ||
-            !newExpense.category
-        )
+        if (!newExpense.description || !newExpense.amount || !newExpense.category) {
+            toast({ title: "Missing fields", description: "Please fill out description, amount, and category.", variant: "destructive" });
             return;
+        }
         try {
             // Find category ID
             const cat = categories.find((c) => c.name === newExpense.category);
@@ -139,8 +137,13 @@ const Expenses = () => {
                     })),
                 );
                 setExpenses(allExpenses);
+            } else {
+                const data = await res.json();
+                toast({ title: "Failed to add expense", description: data.reason || "Something went wrong.", variant: "destructive" });
             }
-        } catch {}
+        } catch {
+            toast({ title: "Failed to add expense", description: "Network error, please try again.", variant: "destructive" });
+        }
     };
 
     const handleDelete = async (expense: Expense) => {
@@ -156,12 +159,19 @@ const Expenses = () => {
             if (res.ok) {
                 toast({ title: "Expense deleted" });
                 setExpenses(expenses.filter((e) => e._id !== expense._id));
+            } else {
+                toast({ title: "Failed to delete expense", description: "Something went wrong.", variant: "destructive" });
             }
-        } catch {}
+        } catch {
+            toast({ title: "Failed to delete expense", description: "Network error, please try again.", variant: "destructive" });
+        }
     };
 
     const handleAddCategory = async () => {
-        if (!newCategoryName.trim()) return;
+        if (!newCategoryName.trim()) {
+            toast({ title: "Missing name", description: "Please enter a category name.", variant: "destructive" });
+            return;
+        }
         try {
             const res = await fetch(`${API_URL}/api/categories`, {
                 method: "POST",
@@ -172,14 +182,18 @@ const Expenses = () => {
             if (res.ok) {
                 setNewCategoryName("");
                 setOpenCategoryDialog(false);
+                toast({ title: "Category added", description: `${newCategoryName} has been created.` });
                 // Refresh categories
-                const resCat = await fetch(`${API_URL}/api/categories`, {
-                    credentials: "include",
-                });
+                const resCat = await fetch(`${API_URL}/api/categories`, { credentials: "include" });
                 const catData = await resCat.json();
                 setCategories(catData || []);
+            } else {
+                const data = await res.json();
+                toast({ title: "Failed to add category", description: data.reason || "Something went wrong.", variant: "destructive" });
             }
-        } catch {}
+        } catch {
+            toast({ title: "Failed to add category", description: "Network error, please try again.", variant: "destructive" });
+        }
     };
 
     const total = filtered.reduce((sum, e) => sum + (e.amount || 0), 0);

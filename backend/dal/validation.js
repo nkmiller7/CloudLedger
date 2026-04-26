@@ -362,10 +362,10 @@ const validate = {
             reason: "description must be a string",
             trace: new Error().stack,
           };
-        if (!(description.length >= 5 && description.length <= 200))
+        if (!(description.length >= 2 && description.length <= 200))
           throw {
             http_code: 400,
-            reason: "description must be between 5 and 200 characters",
+            reason: "description must be between 2 and 200 characters",
             trace: new Error().stack,
           };
       },

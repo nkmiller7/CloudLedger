@@ -50,7 +50,10 @@ const Savings = () => {
   }, []);
 
   const handleCreate = async () => {
-    if (!newGoal.name || !newGoal.goal_amount || !newGoal.current_amount || !newGoal.deadline) return;
+    if (!newGoal.name || !newGoal.goal_amount || !newGoal.current_amount || !newGoal.deadline) {
+      toast({ title: "Missing fields", description: "Please fill out all fields.", variant: "destructive" });
+      return;
+    }
     try {
       const deadlineDate = new Date(newGoal.deadline);
       const res = await fetch(`${API_URL}/api/saving_goals`, {
@@ -79,7 +82,10 @@ const Savings = () => {
   };
 
   const handleContribute = async () => {
-    if (!selectedGoal || !contributeAmount) return;
+    if (!selectedGoal || !contributeAmount) {
+      toast({ title: "Missing fields", description: "Please enter a contribution amount.", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/saving_goals/${selectedGoal._id}`, {
         method: "PATCH",
