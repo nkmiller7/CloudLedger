@@ -76,7 +76,14 @@ useEffect(() => {
 
 const filtered = filter === "all" ? expenses : expenses.filter((e) => e.category === filter);
 
-const totalExpenses = expenses.reduce((s, c) => s + (c.amount || 0), 0);
+const getDate = (e) => e.date || e.transaction_date || e.transactionDate;
+const getMonth = (dateStr) => {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+const currentMonth = getMonth(new Date().toISOString());
+const currentMonthExpenses = expenses.filter(e => getDate(e) && getMonth(getDate(e)) === currentMonth);
+const totalExpenses = currentMonthExpenses.reduce((s, c) => s + (c.amount || 0), 0);
 
 const handleLogout = () => {
   logout();
@@ -158,21 +165,21 @@ const pieColors = [
 ];
 const categoryData = categories.map((cat, i) => ({
   name: cat.name,
-  value: (cat.expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0),
+  value: (cat.expenses || []).filter(e => getDate(e) && getMonth(getDate(e)) === currentMonth).reduce((sum, e) => sum + (e.amount || 0), 0),
   color: pieColors[i % pieColors.length],
 }));
 
-const getMonth = (dateStr) => {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
-const months = Array.from(new Set(expenses.map(e => getMonth(e.date || e.transaction_date || e.transactionDate)))).sort();
+const sixMonthsAgo = new Date();
+sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+sixMonthsAgo.setDate(1);
+const cutoffMonth = getMonth(sixMonthsAgo.toISOString());
+const months = Array.from(new Set(expenses.map(e => getDate(e) ? getMonth(getDate(e)) : null).filter(m => m && m >= cutoffMonth))).sort();
 const monthlyData = months.map(month => {
-  const monthExpenses = expenses.filter(e => getMonth(e.date || e.transaction_date || e.transactionDate) === month);
+  const monthExpenses = expenses.filter(e => getDate(e) && getMonth(getDate(e)) === month);
   return {
     month,
     expenses: monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0),
-    income: 0 // Placeholder, update if you have income data
+    income: 0,
   };
 });
 
