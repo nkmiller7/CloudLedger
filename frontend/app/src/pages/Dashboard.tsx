@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import API_URL from "../config";
 
 
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { toast } = useToast();
 
   const monthlyBudget = user?.monthly_budget ?? 3500;
   const [showExpenseInput, setShowExpenseInput] = useState(false);
@@ -98,7 +100,10 @@ const handleExpenseInputChange = (field, value) => {
 
 const handleAddExpenseFromDashboard = async () => {
     // ...existing code...
-  if (!expenseInput.description || !expenseInput.amount || !expenseInput.category) return;
+  if (!expenseInput.description || !expenseInput.amount || !expenseInput.category) {
+    toast({ title: "Missing fields", description: "Please fill out description, amount, and category.", variant: "destructive" });
+    return;
+  }
   try {
     const cat = categories.find((c) => c.name === expenseInput.category);
     if (!cat) return;
@@ -119,14 +124,22 @@ const handleAddExpenseFromDashboard = async () => {
       setShowExpenseInput(false);
       setExpenseInput({ description: "", amount: "", category: categories[0]?.name || "", paymentMethod: "debit" });
       navigate("/dashboard/expenses");
+    } else {
+      const data = await res.json();
+      toast({ title: "Failed to add expense", description: data.reason || "Something went wrong.", variant: "destructive" });
     }
-  } catch {}
- };
+  } catch {
+    toast({ title: "Failed to add expense", description: "Network error, please try again.", variant: "destructive" });
+  }
+};
 
   // Add new category logic (copied/adapted from Expenses.tsx)
   const handleAddCategory = async (e) => {
     e.preventDefault();
-    if (!newCategoryName.trim()) return;
+    if (!newCategoryName.trim()) {
+      toast({ title: "Missing name", description: "Please enter a category name.", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/categories`, {
         method: "POST",
@@ -142,9 +155,14 @@ const handleAddExpenseFromDashboard = async () => {
         setExpenseInput((prev) => ({ ...prev, category: newCategoryName }));
         setNewCategoryName("");
         setOpenCategoryDialog(false);
+        toast({ title: "Category added", description: `${newCategoryName} has been created.` });
+      } else {
+        const data = await res.json();
+        toast({ title: "Failed to add category", description: data.reason || "Something went wrong.", variant: "destructive" });
       }
     } catch (err) {
       // Optionally handle error
+      toast({ title: "Failed to add category", description: "Network error, please try again.", variant: "destructive" });
     }
   };
 
