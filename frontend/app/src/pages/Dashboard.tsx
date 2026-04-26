@@ -74,9 +74,18 @@ useEffect(() => {
   fetchData();
 }, []);
 
-const filtered = filter === "all" ? expenses : expenses.filter((e) => e.category === filter);
+const getDate = (e) => e.date || e.transaction_date || e.transactionDate;
 
-const totalExpenses = expenses.reduce((s, c) => s + (c.amount || 0), 0);
+const filtered = (filter === "all" ? expenses : expenses.filter((e) => e.category === filter))
+  .sort((a, b) => new Date(getDate(b)).getTime() - new Date(getDate(a)).getTime())
+  .slice(0, 10);
+const getMonth = (dateStr) => {
+  const d = new Date(dateStr);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+const currentMonth = getMonth(new Date().toISOString());
+const currentMonthExpenses = expenses.filter(e => getDate(e) && getMonth(getDate(e)) === currentMonth);
+const totalExpenses = currentMonthExpenses.reduce((s, c) => s + (c.amount || 0), 0);
 
 const handleLogout = () => {
   logout();
@@ -158,24 +167,30 @@ const pieColors = [
 ];
 const categoryData = categories.map((cat, i) => ({
   name: cat.name,
-  value: (cat.expenses || []).reduce((sum, e) => sum + (e.amount || 0), 0),
+  value: (cat.expenses || []).filter(e => getDate(e) && getMonth(getDate(e)) === currentMonth).reduce((sum, e) => sum + (e.amount || 0), 0),
   color: pieColors[i % pieColors.length],
-}));
+})).filter(cat => cat.value > 0);
 
-const getMonth = (dateStr) => {
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-};
-const months = Array.from(new Set(expenses.map(e => getMonth(e.date || e.transaction_date || e.transactionDate)))).sort();
+const sixMonthsAgo = new Date();
+sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+sixMonthsAgo.setDate(1);
+const cutoffMonth = getMonth(sixMonthsAgo.toISOString());
+const months = Array.from(new Set(expenses.map(e => getDate(e) ? getMonth(getDate(e)) : null).filter(m => m && m >= cutoffMonth))).sort();
 const monthlyData = months.map(month => {
-  const monthExpenses = expenses.filter(e => getMonth(e.date || e.transaction_date || e.transactionDate) === month);
+  const monthExpenses = expenses.filter(e => getDate(e) && getMonth(getDate(e)) === month);
   return {
     month,
     expenses: monthExpenses.reduce((sum, e) => sum + (e.amount || 0), 0),
-    income: 0 // Placeholder, update if you have income data
+    budget: monthlyBudget,
   };
 });
 
+
+if (loading) return (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <p className="text-muted-foreground">Loading...</p>
+  </div>
+);
 
 return (
   <div className="min-h-screen bg-background">
@@ -241,12 +256,12 @@ return (
         </Card>
         <Card>
           <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <TrendingUp className="h-5 w-5 text-primary" />
+            <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${totalExpenses > monthlyBudget ? "bg-destructive/10" : "bg-primary/10"}`}>
+              <TrendingUp className={`h-5 w-5 ${totalExpenses > monthlyBudget ? "text-destructive" : "text-primary"}`} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Remaining</p>
-              <p className="text-2xl font-bold">${(monthlyBudget - totalExpenses).toLocaleString()}</p>
+              <p className={`text-2xl font-bold ${totalExpenses > monthlyBudget ? "text-destructive" : ""}`}>${(monthlyBudget - totalExpenses).toLocaleString()}</p>
             </div>
           </CardContent>
         </Card>
@@ -261,7 +276,11 @@ return (
               ${totalExpenses.toLocaleString()} / ${monthlyBudget.toLocaleString()}
             </span>
           </div>
-          <Progress value={(totalExpenses / monthlyBudget) * 100} className="h-2.5" />
+          <Progress
+            value={(totalExpenses / monthlyBudget) * 100}
+            className="h-2.5"
+            indicatorClassName={totalExpenses > monthlyBudget ? "bg-destructive" : undefined}
+          />
         </CardContent>
       </Card>
 
@@ -277,7 +296,7 @@ return (
           <div className="grid lg:grid-cols-2 gap-5">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Income vs Expenses</CardTitle>
+                <CardTitle className="text-base">Budget vs Expenses</CardTitle>
                 <CardDescription>Last 6 months</CardDescription>
               </CardHeader>
               <CardContent className="h-72">
@@ -288,7 +307,7 @@ return (
                     <YAxis fontSize={12} />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="income" fill="hsl(153, 60%, 38%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="budget" fill="hsl(153, 60%, 38%)" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="expenses" fill="hsl(0, 72%, 51%)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -349,7 +368,7 @@ return (
                   <YAxis fontSize={12} />
                   <Tooltip />
                   <Line type="monotone" dataKey="expenses" stroke="hsl(0, 72%, 51%)" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="income" stroke="hsl(153, 60%, 38%)" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="budget" stroke="hsl(153, 60%, 38%)" strokeWidth={2} dot={{ r: 4 }} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -387,7 +406,7 @@ return (
             <CardContent>
               <div className="divide-y">
                 {filtered.map((exp) => (
-                  <div key={exp.id} className="flex items-center justify-between py-3">
+                  <div key={exp._id} className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center">
                         <Receipt className="h-4 w-4 text-muted-foreground" />
@@ -395,9 +414,9 @@ return (
                       <div>
                         <p className="text-sm font-medium">{exp.description}</p>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">{exp.date}</span>
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{exp.method}</Badge>
-                          {exp.recurring && <Badge variant="outline" className="text-[10px] px-1.5 py-0">recurring</Badge>}
+                          <span className="text-xs text-muted-foreground">{new Date(getDate(exp)).toLocaleDateString()}</span>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{exp.payment_method}</Badge>
+                          {exp.frequency !== "one_time" && <Badge variant="outline" className="text-[10px] px-1.5 py-0">recurring</Badge>}
                         </div>
                       </div>
                     </div>
