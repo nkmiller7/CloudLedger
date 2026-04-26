@@ -16,6 +16,9 @@ router.post("/register", async (req, res) => {
       req.body.last_name,
     );
 
+    req.session.user_id = user._id;
+    req.session.username = user.username;
+
     return res.status(201).json(user);
   } catch (error) {
     if (
